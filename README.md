@@ -22,6 +22,7 @@ A command-line interface (CLI) is provided to interact with the cache in real-ti
 
 ## Project Structure
 
+```
 MCacheProject/
 ├─ CMakeLists.txt       # CMake build configuration
 ├─ include/             # Header files
@@ -34,6 +35,7 @@ MCacheProject/
 └─ tests/               # Test files
 └─ test_cache.cpp
 
+```
 
 ---
 
