@@ -40,14 +40,14 @@ void CLI::run() {
     switch (command) {
 
       case Command::SET: {
-        std::cin >> key >> value;
-        // bool success = cache_.set_val(key, value);
-        //
-        // if (success) {
-        //   std::cout << "true " << value << std::endl;
-        // } else {
-        //   std::cout << "false" << std::endl;
-        // }
+        std::cin >> type >> key >> value;
+        bool success = cache_.set_val(key, type, value);
+
+        if (success) {
+          std::cout << "true " << value << std::endl;
+        } else {
+          std::cout << "false" << std::endl;
+        }
         break;
       }
 
@@ -78,8 +78,8 @@ void CLI::run() {
         std::cin >> key;
         auto val = cache_.get_val(key);
 
-        if (val) {
-          // std::cout << "true " << val->type << std::endl;
+        if (val.has_value()) {
+          std::cout << "true {" << val->first << "} " << val->second << std::endl;
         } else {
           std::cout << "false" << std::endl;
         }

@@ -24,9 +24,9 @@ public:
   MCache(const MCache&) = delete;
   MCache operator=(const MCache&) = delete;
 
-  std::optional<CacheValue> get_val(const std::string& key);
+  std::optional<std::pair<std::string, std::string>> get_val(const std::string& key);
   bool add_val(const std::string& key, const std::string& type, const std::string& value);
-  bool set_val(const std::string& key, const std::vector<uint8_t>& value);
+  bool set_val(const std::string& key, const std::string& type, const std::string& value);
   bool del_val(const std::string& key) noexcept;
 
   struct Stats {

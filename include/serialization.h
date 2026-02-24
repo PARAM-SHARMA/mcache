@@ -29,36 +29,11 @@ T from_bytes(const std::vector<uint8_t>& data) {
 }
 
 inline std::vector<uint8_t> to_bytes(const std::string& str) {
-    return std::vector<uint8_t>(str.begin(), str.end());
+  return std::vector<uint8_t>(str.begin(), str.end());
 }
 
 inline std::string from_bytes_string(const std::vector<uint8_t>& data) {
-    return std::string(data.begin(), data.end());
+  return std::string(data.begin(), data.end());
 }
 
-inline InferredType infer_type(const std::string& input) {
-    size_t i = 0;
-    if (input.empty()) return InferredType::STRING;
-    if (input[0] == '-' || input[0] == '+') i++; // allow sign
-    bool has_dot = false;
-    for (; i < input.size(); i++) {
-        if (std::isdigit(input[i])) continue;
-        if (input[i] == '.' && !has_dot) { has_dot = true; continue; }
-        return InferredType::STRING; // contains non-digit => string
-    }
-    return has_dot ? InferredType::FLOAT : InferredType::INT;
-}
-
-inline std::vector<uint8_t> infer_and_serialize(const std::string& input) {
-    auto type = infer_type(input);
-    switch(type) {
-        case InferredType::INT:
-            return to_bytes(std::stoi(input));
-        case InferredType::FLOAT:
-            return to_bytes(std::stof(input));
-        case InferredType::STRING:
-        default:
-            return to_bytes(input);
-    }
-}
 }
