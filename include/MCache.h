@@ -28,6 +28,7 @@ public:
   bool add_val(const std::string& key, const std::string& type, const std::string& value);
   bool set_val(const std::string& key, const std::string& type, const std::string& value);
   bool del_val(const std::string& key) noexcept;
+  std::optional<MCache::CacheValue> parse_value(const std::string& type, const std::string& value);
 
   struct Stats {
     size_t hits;

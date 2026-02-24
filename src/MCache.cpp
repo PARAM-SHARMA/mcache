@@ -31,55 +31,30 @@ std::optional<std::pair<std::string, std::string>> MCache::get_val(const std::st
 
 bool MCache::add_val(const std::string& key, const std::string& type, const std::string& value) {
   std::lock_guard<std::mutex> lock(mtx_);
-  auto it = store_.find(key);
-  if (it != store_.end()) {
+  if (store_.find(key) != store_.end())
     return false;
+
+  if (auto parsed = parse_value(type, value)) {
+    store_.emplace(key, *parsed);
+    return true;
   }
-  MCache::CacheValue c_val;
-  if (type == "int") {
-    c_val.type = ValueType::INT;
-    c_val.data = serialization::to_bytes(std::stoi(value));
-  }
-  else if (type == "float") {
-    c_val.type = ValueType::FLOAT;
-    c_val.data = serialization::to_bytes(std::stof(value));
-  }
-  else if (type == "string") {
-    c_val.type = ValueType::STRING;
-    c_val.data = serialization::to_bytes(value);
-  }
-  else {
-    return false;
-  }
-  store_.emplace(key, c_val);
-  return true;
+
+  return false;
 }
 
 bool MCache::set_val(const std::string& key, const std::string& type, const std::string& value) {
   std::lock_guard<std::mutex> lock(mtx_);
-  auto it = store_.find(key);
+auto it = store_.find(key);
   if (it == store_.end()) {
     return false;
   }
 
-  MCache::CacheValue c_val;
-  if (type == "int") {
-    c_val.type = ValueType::INT;
-    c_val.data = serialization::to_bytes(std::stoi(value));
-  }
-  else if (type == "float") {
-    c_val.type = ValueType::FLOAT;
-    c_val.data = serialization::to_bytes(std::stof(value));
-  }
-  else if (type == "string") {
-    c_val.type = ValueType::STRING;
-    c_val.data = serialization::to_bytes(value);
-  }
-  else {
+  if (auto parsed = parse_value(type, value)) {
+    it->second = *parsed;
+    return true;
+  } else {
     return false;
   }
-  it->second = c_val;
-  return true;
 }
 
 bool MCache::del_val(const std::string& key) noexcept {
@@ -95,4 +70,26 @@ MCache::Stats MCache::get_stats() const {
     misses_,
     store_.size()
   };
+}
+
+std::optional<MCache::CacheValue> MCache::parse_value(const std::string& type, const std::string& value) {
+  MCache::CacheValue c_val;
+  if (type == "int") {
+    c_val.type = ValueType::INT;
+    c_val.data = serialization::to_bytes(std::stoi(value));
+  }
+  else if (type == "float") {
+    c_val.type = ValueType::FLOAT;
+    c_val.data = serialization::to_bytes(std::stof(value));
+  }
+  else if (type == "string") {
+    c_val.type = ValueType::STRING;
+    c_val.data = serialization::to_bytes(value);
+  }
+  else {
+    return std::nullopt;
+  }
+
+  return c_val;
+
 }
