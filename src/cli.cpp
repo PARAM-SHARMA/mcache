@@ -22,7 +22,8 @@ void CLI::run() {
   };
 
   std::string cmd, key;
-  int value;
+  std::string type;
+  std::string value;
 
   while (true) {
     std::cout << "MCache > ";
@@ -39,8 +40,10 @@ void CLI::run() {
     switch (command) {
 
       case Command::SET: {
-        std::cin >> key >> value;
-        bool success = cache_.set_val(key, value);
+        std::cin >> type >> key;
+        std::cin.ignore();
+        std::getline(std::cin, value);
+        bool success = cache_.set_val(key, type, value);
 
         if (success) {
           std::cout << "true " << value << std::endl;
@@ -51,8 +54,10 @@ void CLI::run() {
       }
 
       case Command::ADD: {
-        std::cin >> key >> value;
-        bool success = cache_.add_val(key, value);
+        std::cin >> type >> key;
+        std::cin.ignore();
+        std::getline(std::cin, value);
+        bool success = cache_.add_val(key, type, value);
 
         if (success) {
           std::cout << "true " << value << std::endl;
@@ -77,8 +82,8 @@ void CLI::run() {
         std::cin >> key;
         auto val = cache_.get_val(key);
 
-        if (val) {
-          std::cout << "true " << *val << std::endl;
+        if (val.has_value()) {
+          std::cout << "true {" << val->first << "} " << val->second << std::endl;
         } else {
           std::cout << "false" << std::endl;
         }
