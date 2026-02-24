@@ -74,22 +74,27 @@ MCache::Stats MCache::get_stats() const {
 
 std::optional<MCache::CacheValue> MCache::parse_value(const std::string& type, const std::string& value) {
   MCache::CacheValue c_val;
-  if (type == "int") {
-    c_val.type = ValueType::INT;
-    c_val.data = serialization::to_bytes(std::stoi(value));
-  }
-  else if (type == "float") {
-    c_val.type = ValueType::FLOAT;
-    c_val.data = serialization::to_bytes(std::stof(value));
-  }
-  else if (type == "string") {
-    c_val.type = ValueType::STRING;
-    c_val.data = serialization::to_bytes(value);
-  }
-  else {
+  try {
+    if (type == "int") {
+      c_val.type = ValueType::INT;
+      c_val.data = serialization::to_bytes(std::stoi(value));
+    }
+    else if (type == "float") {
+      c_val.type = ValueType::FLOAT;
+      c_val.data = serialization::to_bytes(std::stof(value));
+    }
+    else if (type == "string") {
+      c_val.type = ValueType::STRING;
+      c_val.data = serialization::to_bytes(value);
+    }
+    else {
+      return std::nullopt;
+    }
+
+  } catch (const std::invalid_argument&) {
+    return std::nullopt;
+  } catch (const std::out_of_range&) {
     return std::nullopt;
   }
-
   return c_val;
-
 }
