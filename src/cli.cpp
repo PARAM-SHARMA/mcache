@@ -40,7 +40,9 @@ void CLI::run() {
     switch (command) {
 
       case Command::SET: {
-        std::cin >> type >> key >> value;
+        std::cin >> type >> key;
+        std::cin.ignore();
+        std::getline(std::cin, value);
         bool success = cache_.set_val(key, type, value);
 
         if (success) {
@@ -52,7 +54,9 @@ void CLI::run() {
       }
 
       case Command::ADD: {
-        std::cin >> type >> key >> value;
+        std::cin >> type >> key;
+        std::cin.ignore();
+        std::getline(std::cin, value);
         bool success = cache_.add_val(key, type, value);
 
         if (success) {

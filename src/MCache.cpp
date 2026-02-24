@@ -44,7 +44,7 @@ bool MCache::add_val(const std::string& key, const std::string& type, const std:
 
 bool MCache::set_val(const std::string& key, const std::string& type, const std::string& value) {
   std::lock_guard<std::mutex> lock(mtx_);
-auto it = store_.find(key);
+  auto it = store_.find(key);
   if (it == store_.end()) {
     return false;
   }
