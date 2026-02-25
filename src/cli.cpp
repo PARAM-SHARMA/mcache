@@ -1,5 +1,6 @@
 #include "cli.h"
 #include <iostream>
+#include <variant>
 
 void CLI::run() {
   enum class Command {
@@ -9,6 +10,7 @@ void CLI::run() {
     DEL,
     STAT,
     PLIST,
+    GLIST,
     EXIT,
     UNKNOWN
   };
@@ -20,6 +22,7 @@ void CLI::run() {
     {"del", Command::DEL},
     {"stat", Command::STAT},
     {"plist", Command::PLIST},
+    {"glist", Command::GLIST},
     {"exit", Command::EXIT},
   };
 
@@ -112,6 +115,43 @@ void CLI::run() {
           std::cout << "true" << std::endl;
         } else {
           std::cout << "false" << std::endl;
+        }
+        break;
+      }
+
+      case Command::GLIST: {
+        std::cin >> key;
+        MCache::Response val = cache_.get_list(key);
+
+        if (val.success) {
+          std::cout << "true {" << val.type << "} ";
+
+          if (val.data) {
+            std::visit([](auto& container) {
+              using T = std::decay_t<decltype(container)>;
+              if constexpr (std::is_same_v<T, std::vector<int>>) {
+                std::cout << "List of ints: ";
+                for (const auto& item : container) {
+                  std::cout << item << " ";
+                }
+              } else if constexpr (std::is_same_v<T, std::vector<float>>) {
+                std::cout << "List of floats: ";
+                for (const auto& item : container) {
+                  std::cout << item << " ";
+                }
+              } else if constexpr (std::is_same_v<T, std::vector<std::string>>) {
+                std::cout << "List of strings: ";
+                for (const auto& item : container) {
+                  std::cout << item << " ";
+                }
+              }
+              std::cout << std::endl;
+            }, *val.data);
+          } else {
+            std::cout << "Error: No data available in response." << std::endl;
+          }
+        } else {
+          std::cout << "false " << val.error << std::endl;
         }
         break;
       }

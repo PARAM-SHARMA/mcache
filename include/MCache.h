@@ -46,12 +46,24 @@ public:
   MCache(const MCache&) = delete;
   MCache operator=(const MCache&) = delete;
 
+  struct Response {
+    bool success;
+    std::string s_type;
+    std::string type;
+    std::optional<std::variant<
+      int, float, std::string, std::vector<int>, std::vector<float>, std::vector<std::string>
+    >> data;
+    std::string error;
+  };
+
   std::optional<std::pair<std::string, std::string>> get_val(const std::string& key);
   bool add_val(const std::string& key, const std::string& type, const std::string& value);
   bool set_val(const std::string& key, const std::string& type, const std::string& value);
   bool del_val(const std::string& key) noexcept;
   std::optional<MCache::CacheValue> parse_value(const std::string& type, const std::string& value);
 
+  // byte list
+  Response get_list(const std::string& key);
   bool push_list(const std::string& key, const std::string& type, const std::string& value);
 
   struct Stats {
