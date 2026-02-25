@@ -49,13 +49,27 @@ inline std::string from_bytes_string(const std::vector<uint8_t>& data) {
   return std::string(data.begin(), data.end());
 }
 
-inline void construct_list(std::vector<std::vector<uint8_t>>& bl,const std::string& values) {
-  
+inline void construct_list(const std::string& type, std::vector<std::vector<uint8_t>>& bl,const std::string& values) {
+
   std::vector<std::string> vals = split(values, ' ');
 
   for (const std::string s : vals) {
-    std::vector<uint8_t> b = to_bytes(s);
-    bl.push_back(b);
+
+    std::vector<uint8_t> b;
+    try {
+      if (type == "int") {
+        b = to_bytes(std::stoi(s));
+      } else if (type == "float") {
+        b = to_bytes(std::stof(s));
+      } else if (type == "string") {
+        b = to_bytes(s);
+      }
+      bl.push_back(b);
+    } catch (const std::invalid_argument&) {
+      continue;
+    } catch (const std::out_of_range&) {
+      continue;
+    }
   }
 
   return;

@@ -6,7 +6,7 @@ bool MCache::push_list(const std::string& key, const std::string& type, const st
   MCache::ByteList bl;
 
 
-  serialization::construct_list(bl,values);
+  serialization::construct_list(type, bl, values);
 
   auto it = store_.find(key);
   if (it != store_.end()) {
