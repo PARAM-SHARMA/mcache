@@ -16,6 +16,7 @@ set(SOURCES
     src/main.cpp
     src/MCache.cpp
     src/cli.cpp
+    src/ListCache.cpp
 )
 
 # Add executable for main program
@@ -25,7 +26,7 @@ add_executable(MCacheApp ${SOURCES})
 enable_testing()  # Enable CTest
 
 # Add test source
-add_executable(MCacheTests tests/test_cache.cpp src/MCache.cpp)
+add_executable(MCacheTests tests/test_cache.cpp src/MCache.cpp src/ListCache.cpp)
 
 # Link libraries if needed (none for now)
 # target_link_libraries(MCacheTests ...)

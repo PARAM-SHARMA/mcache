@@ -3,30 +3,83 @@
 
 std::optional<std::pair<std::string, std::string>> MCache::get_val(const std::string& key) {
   std::lock_guard<std::mutex> lock(mtx_);
+
   auto it = store_.find(key);
   if (it == store_.end()) {
     ++misses_;
     return std::nullopt;
-  } else {
-    ++hits_;
-    std::pair<std::string, std::string> c_val;
-    if (it->second.type == MCache::ValueType::INT) {
-      int value = serialization::from_bytes<int>(it->second.data); 
-      c_val.first = "int";
-      c_val.second = std::to_string(value);
-    }
-    else if (it->second.type == MCache::ValueType::FLOAT) {
-      float value = serialization::from_bytes<float>(it->second.data); 
-      c_val.first = "float";
-      c_val.second = std::to_string(value);
-    }
-    else if (it->second.type == MCache::ValueType::STRING) {
-      std::string value = serialization::from_bytes_string(it->second.data); 
-      c_val.first = "string";
-      c_val.second = value;
-    }
-    return c_val;
   }
+
+  ++hits_;
+  const CacheValue& cv = it->second;
+  std::pair<std::string, std::string> result;
+
+  // First dispatch by structure type
+  switch (cv.s_type) {
+    case StructType::RAW: {
+      std::visit([&](auto& raw_bytes) {
+        using T = std::decay_t<decltype(raw_bytes)>;
+        if constexpr (std::is_same_v<T, Bytes>) {
+          switch (cv.type) {
+            case ValueType::INT: {
+              int v = serialization::from_bytes<int>(raw_bytes);
+              result.first = "int";
+              result.second = std::to_string(v);
+              break;
+            }
+            case ValueType::FLOAT: {
+              float v = serialization::from_bytes<float>(raw_bytes);
+              result.first = "float";
+              result.second = std::to_string(v);
+              break;
+            }
+            case ValueType::STRING: {
+              std::string v = serialization::from_bytes_string(raw_bytes);
+              result.first = "string";
+              result.second = v;
+              break;
+            }
+          }
+        }
+      }, cv.data);
+      break;
+    }
+
+    case StructType::LIST: {
+      std::visit([&](auto& list){
+        using T = std::decay_t<decltype(list)>;
+        if constexpr (std::is_same_v<T, ByteList>) {
+          result.first = "list";
+          result.second = "size=" + std::to_string(list.size());
+        }
+      }, cv.data);
+      break;
+    }
+
+    case StructType::SET: {
+      std::visit([&](auto& s){
+        using T = std::decay_t<decltype(s)>;
+        if constexpr (std::is_same_v<T, ByteSet>) {
+          result.first = "set";
+          result.second = "size=" + std::to_string(s.size());
+        }
+      }, cv.data);
+      break;
+    }
+
+    case StructType::MAP: {
+      std::visit([&](auto& m){
+        using T = std::decay_t<decltype(m)>;
+        if constexpr (std::is_same_v<T, ByteMap>) {
+          result.first = "map";
+          result.second = "size=" + std::to_string(m.size());
+        }
+      }, cv.data);
+      break;
+    }
+  }
+
+  return result;
 }
 
 bool MCache::add_val(const std::string& key, const std::string& type, const std::string& value) {
@@ -75,6 +128,7 @@ MCache::Stats MCache::get_stats() const {
 std::optional<MCache::CacheValue> MCache::parse_value(const std::string& type, const std::string& value) {
   MCache::CacheValue c_val;
   try {
+    c_val.s_type = StructType::RAW;
     if (type == "int") {
       c_val.type = ValueType::INT;
       c_val.data = serialization::to_bytes(std::stoi(value));

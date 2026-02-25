@@ -8,6 +8,7 @@ void CLI::run() {
     ADD,
     DEL,
     STAT,
+    PLIST,
     EXIT,
     UNKNOWN
   };
@@ -18,6 +19,7 @@ void CLI::run() {
     {"add", Command::ADD},
     {"del", Command::DEL},
     {"stat", Command::STAT},
+    {"plist", Command::PLIST},
     {"exit", Command::EXIT},
   };
 
@@ -96,6 +98,21 @@ void CLI::run() {
         std::cout << "hits -> " << stat.hits << std::endl;
         std::cout << "misses -> " << stat.misses << std::endl;
         std::cout << "keys -> " << stat.keys << std::endl;
+        break;
+      }
+
+      case Command::PLIST: {
+        std::cin >> type >> key;
+        std::cin.ignore();
+        std::getline(std::cin, value);
+
+        bool success = cache_.push_list(key, type, value);
+
+        if (success) {
+          std::cout << "true" << std::endl;
+        } else {
+          std::cout << "false" << std::endl;
+        }
         break;
       }
 
