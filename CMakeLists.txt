@@ -26,9 +26,11 @@ add_executable(MCacheApp ${SOURCES})
 enable_testing()  # Enable CTest
 
 # Add test source
-add_executable(MCacheTests tests/test_cache.cpp src/MCache.cpp src/ListCache.cpp)
+add_executable(TestCache tests/test_cache.cpp src/MCache.cpp src/ListCache.cpp)
+add_executable(TestList tests/list_test.cpp src/MCache.cpp src/ListCache.cpp)
 
 # Link libraries if needed (none for now)
 # target_link_libraries(MCacheTests ...)
 
-add_test(NAME CacheTests COMMAND MCacheTests)
+add_test(NAME TestCache COMMAND TestCache)
+add_test(NAME TestList COMMAND TestList)
