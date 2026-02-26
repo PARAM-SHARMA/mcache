@@ -1,5 +1,6 @@
 #pragma once
 
+#include "MCache.h"
 #include <vector>
 #include <cstdint>
 #include <string>
@@ -49,7 +50,7 @@ inline std::string from_bytes_string(const std::vector<uint8_t>& data) {
   return std::string(data.begin(), data.end());
 }
 
-inline void construct_list(const std::string& type, std::vector<std::vector<uint8_t>>& bl,const std::string& values) {
+inline void construct_list(const MCache::ValueType type, std::vector<std::vector<uint8_t>>& bl,const std::string& values) {
 
   std::vector<std::string> vals = split(values, ' ');
 
@@ -57,11 +58,11 @@ inline void construct_list(const std::string& type, std::vector<std::vector<uint
 
     std::vector<uint8_t> b;
     try {
-      if (type == "int") {
+      if (type == MCache::ValueType::INT) {
         b = to_bytes(std::stoi(s));
-      } else if (type == "float") {
+      } else if (type == MCache::ValueType::FLOAT) {
         b = to_bytes(std::stof(s));
-      } else if (type == "string") {
+      } else if (type == MCache::ValueType::STRING) {
         b = to_bytes(s);
       }
       bl.push_back(b);

@@ -1,4 +1,5 @@
 #include "cli.h"
+#include "MCache.h"
 #include <iostream>
 #include <variant>
 
@@ -26,6 +27,12 @@ void CLI::run() {
     {"exit", Command::EXIT},
   };
 
+  static const std::unordered_map<std::string, MCache::ValueType> types = {
+    {"int", MCache::ValueType::INT},
+    {"float", MCache::ValueType::FLOAT},
+    {"string", MCache::ValueType::STRING}
+  };
+
   std::string cmd, key;
   std::string type;
   std::string value;
@@ -48,7 +55,15 @@ void CLI::run() {
         std::cin >> type >> key;
         std::cin.ignore();
         std::getline(std::cin, value);
-        MCache::Response val = cache_.set_val(key, type, value);
+        MCache::ValueType value_type;
+        auto type_it = types.find(type);
+        if (type_it != types.end()) {
+          value_type = type_it->second;
+        } else {
+          std::cout << "false Invalid Type" << std::endl;
+          break;
+        }
+        MCache::Response val = cache_.set_val(key, value_type, value);
 
         if (val.success) {
           std::cout << "true " << value << std::endl;
@@ -62,7 +77,17 @@ void CLI::run() {
         std::cin >> type >> key;
         std::cin.ignore();
         std::getline(std::cin, value);
-        MCache::Response val = cache_.set_val(key, type, value);
+
+        MCache::ValueType value_type;
+        auto type_it = types.find(type);
+        if (type_it != types.end()) {
+          value_type = type_it->second;
+        } else {
+          std::cout << "false Invalid Type" << std::endl;
+          break;
+        }
+
+        MCache::Response val = cache_.add_val(key, value_type, value);
 
         if (val.success) {
           std::cout << "true " << value << std::endl;
@@ -125,7 +150,16 @@ void CLI::run() {
         std::cin.ignore();
         std::getline(std::cin, value);
 
-        MCache::Response val = cache_.push_list(key, type, value);
+        MCache::ValueType value_type;
+        auto type_it = types.find(type);
+        if (type_it != types.end()) {
+          value_type = type_it->second;
+        } else {
+          std::cout << "false Invalid Type" << std::endl;
+          break;
+        }
+
+        MCache::Response val = cache_.push_list(key, value_type, value);
 
         if (val.success) {
           std::cout << "true" << std::endl;

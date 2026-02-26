@@ -4,10 +4,10 @@
 int main() {
   MCache cache;
 
-  assert(cache.add_val("a", "int", "1").success == true);
-  assert(cache.add_val("a", "string", "2").success == false);
-  assert(cache.add_val("a", "int", "test").success == false);
-  assert(cache.set_val("a", "string", "2").success == true);
+  assert(cache.add_val("a", MCache::ValueType::INT, "1").success == true);
+  assert(cache.add_val("a", MCache::ValueType::STRING, "2").success == false);
+  assert(cache.add_val("a", MCache::ValueType::INT, "test").success == false);
+  assert(cache.set_val("a",MCache::ValueType::STRING, "2").success == true);
 
   MCache::Response val = cache.get_val("a");
   assert(val.success && val.type == "string" && std::visit([](auto& v) { 

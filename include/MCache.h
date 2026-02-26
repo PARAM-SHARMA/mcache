@@ -62,13 +62,13 @@ public:
 
   // Handle raw key value pair
   Response get_val(const std::string& key);
-  Response add_val(const std::string& key, const std::string& type, const std::string& value);
-  Response set_val(const std::string& key, const std::string& type, const std::string& value);
-  std::optional<MCache::CacheValue> parse_value(const std::string& type, const std::string& value);
+  Response add_val(const std::string& key, const ValueType type, const std::string& value);
+  Response set_val(const std::string& key, const ValueType type, const std::string& value);
+  std::optional<MCache::CacheValue> parse_value(const ValueType type, const std::string& value);
 
   // byte list
   Response get_list(const std::string& key);
-  Response push_list(const std::string& key, const std::string& type, const std::string& value);
+  Response push_list(const std::string& key, const ValueType type, const std::string& value);
 
   struct Stats {
     size_t hits;

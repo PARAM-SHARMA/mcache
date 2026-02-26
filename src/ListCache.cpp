@@ -50,16 +50,21 @@ MCache::Response MCache::get_list(const std::string& key) {
   return Response{false, "", "", std::nullopt, "Not a LIST type"};
 }
 
-MCache::Response MCache::push_list(const std::string& key, const std::string& type, const std::string& values) {
+MCache::Response MCache::push_list(const std::string& key, const MCache::ValueType type, const std::string& values) {
   std::lock_guard<std::mutex> lock(mtx_);
   MCache::ByteList bl;
+  std::string new_type;
 
   serialization::construct_list(type, bl, values);
 
   auto it = store_.find(key);
   if (it != store_.end()) {
     if (auto* existing_list = std::get_if<ByteList>(&it->second.data)) {
-      existing_list->insert(existing_list->end(), bl.begin(), bl.end());
+      if (it->second.type == type) {
+        existing_list->insert(existing_list->end(), bl.begin(), bl.end());
+      } else {
+        return Response{false, "", "", std::nullopt, "Unexpected type"};
+      }
     } else {
       return Response{false, "", "", std::nullopt, "Unexpected type"};
     }
@@ -67,12 +72,13 @@ MCache::Response MCache::push_list(const std::string& key, const std::string& ty
   } else {
     CacheValue cv;
 
-    if (type == "int") {
-      cv.type = MCache::ValueType::INT;
-    } else if (type == "float") {
-      cv.type = MCache::ValueType::FLOAT;
-    } else if (type == "string") {
-      cv.type = MCache::ValueType::STRING;
+    cv.type = type;
+    if (type == MCache::ValueType::INT) {
+      new_type = "int";
+    } else if (type == MCache::ValueType::FLOAT) {
+      new_type = "float";
+    } else if (type == MCache::ValueType::STRING) {
+      new_type = "string";
     }
 
     cv.s_type = MCache::StructType::LIST;
@@ -80,5 +86,5 @@ MCache::Response MCache::push_list(const std::string& key, const std::string& ty
     store_[key] = std::move(cv);
   }
 
-  return Response{true, "list", type, std::nullopt, ""};
+  return Response{true, "list", new_type, std::nullopt, ""};
 }

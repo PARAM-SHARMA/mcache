@@ -82,20 +82,30 @@ MCache::Response MCache::get_val(const std::string& key) {
   return result;
 }
 
-MCache::Response MCache::add_val(const std::string& key, const std::string& type, const std::string& value) {
+MCache::Response MCache::add_val(const std::string& key, const MCache::ValueType type, const std::string& value) {
   std::lock_guard<std::mutex> lock(mtx_);
   if (store_.find(key) != store_.end())
     return Response{false, "", "", std::nullopt, "Key already exists"};
 
   if (auto parsed = parse_value(type, value)) {
     store_.emplace(key, *parsed);
-    return Response{true, "raw", type, std::nullopt, ""};
+
+    std::string new_type;
+
+    if (type == MCache::ValueType::INT) {
+      new_type = "int";
+    } else if (type == MCache::ValueType::FLOAT) {
+      new_type = "float";
+    } else if (type == MCache::ValueType::STRING) {
+      new_type = "string";
+    }
+    return Response{true, "raw", new_type, std::nullopt, ""};
   }
 
   return Response{false, "", "", std::nullopt, "Unexpected Type"};
 }
 
-MCache::Response MCache::set_val(const std::string& key, const std::string& type, const std::string& value) {
+MCache::Response MCache::set_val(const std::string& key, const MCache::ValueType type, const std::string& value) {
   std::lock_guard<std::mutex> lock(mtx_);
   auto it = store_.find(key);
   if (it == store_.end()) {
@@ -103,8 +113,17 @@ MCache::Response MCache::set_val(const std::string& key, const std::string& type
   }
 
   if (auto parsed = parse_value(type, value)) {
+    std::string new_type;
+
+    if (type == MCache::ValueType::INT) {
+      new_type = "int";
+    } else if (type == MCache::ValueType::FLOAT) {
+      new_type = "float";
+    } else if (type == MCache::ValueType::STRING) {
+      new_type = "string";
+    }
     it->second = *parsed;
-    return Response{true, "raw", type, std::nullopt, ""};
+    return Response{true, "raw", new_type, std::nullopt, ""};
   } else {
     return Response{false, "", "", std::nullopt, "Unexpected Type"};
   }
@@ -125,20 +144,18 @@ MCache::Stats MCache::get_stats() const {
   };
 }
 
-std::optional<MCache::CacheValue> MCache::parse_value(const std::string& type, const std::string& value) {
+std::optional<MCache::CacheValue> MCache::parse_value(const MCache::ValueType type, const std::string& value) {
   MCache::CacheValue c_val;
   try {
     c_val.s_type = StructType::RAW;
-    if (type == "int") {
-      c_val.type = ValueType::INT;
+    c_val.type = type;
+    if (type == ValueType::INT) {
       c_val.data = serialization::to_bytes(std::stoi(value));
     }
-    else if (type == "float") {
-      c_val.type = ValueType::FLOAT;
+    else if (type == ValueType::FLOAT) {
       c_val.data = serialization::to_bytes(std::stof(value));
     }
-    else if (type == "string") {
-      c_val.type = ValueType::STRING;
+    else if (type == ValueType::STRING) {
       c_val.data = serialization::to_bytes(value);
     }
     else {
