@@ -4,15 +4,21 @@
 int main() {
   MCache cache;
 
-  assert(cache.add_val("a", "int", "1") == true);
-  assert(cache.add_val("a", "string", "2") == false);
-  assert(cache.add_val("a", "int", "test") == false);
-  assert(cache.set_val("a", "string", "2") == true);
+  assert(cache.add_val("a", "int", "1").success == true);
+  assert(cache.add_val("a", "string", "2").success == false);
+  assert(cache.add_val("a", "int", "test").success == false);
+  assert(cache.set_val("a", "string", "2").success == true);
 
-  auto val = cache.get_val("a");
-  assert(val.has_value() && val->first == "string" && val->second == "2");
-  assert(cache.del_val("a") == true);
-  assert(cache.get_val("a") == std::nullopt);
+  MCache::Response val = cache.get_val("a");
+  assert(val.success && val.type == "string" && std::visit([](auto& v) { 
+    if constexpr (std::is_same_v<std::decay_t<decltype(v)>, std::string>) {
+        return v == "2";
+    } else {
+        return false;
+    }
+  }, *val.data));
+  assert(cache.del_key("a") == true);
+  assert(cache.get_val("a").success == false);
 
   return 0;
 }

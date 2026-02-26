@@ -9,8 +9,9 @@
 #include <variant>
 
 class MCache {
-private:
+public:
   enum class ValueType { INT, FLOAT, STRING };
+private:
   enum class StructType { RAW, LIST, SET, MAP };
   using Bytes = std::vector<uint8_t>;
 
@@ -56,15 +57,18 @@ public:
     std::string error;
   };
 
-  std::optional<std::pair<std::string, std::string>> get_val(const std::string& key);
-  bool add_val(const std::string& key, const std::string& type, const std::string& value);
-  bool set_val(const std::string& key, const std::string& type, const std::string& value);
-  bool del_val(const std::string& key) noexcept;
+  // Delete types of keys
+  bool del_key(const std::string& key) noexcept;
+
+  // Handle raw key value pair
+  Response get_val(const std::string& key);
+  Response add_val(const std::string& key, const std::string& type, const std::string& value);
+  Response set_val(const std::string& key, const std::string& type, const std::string& value);
   std::optional<MCache::CacheValue> parse_value(const std::string& type, const std::string& value);
 
   // byte list
   Response get_list(const std::string& key);
-  bool push_list(const std::string& key, const std::string& type, const std::string& value);
+  Response push_list(const std::string& key, const std::string& type, const std::string& value);
 
   struct Stats {
     size_t hits;

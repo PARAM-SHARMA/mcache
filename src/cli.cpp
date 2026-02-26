@@ -48,12 +48,12 @@ void CLI::run() {
         std::cin >> type >> key;
         std::cin.ignore();
         std::getline(std::cin, value);
-        bool success = cache_.set_val(key, type, value);
+        MCache::Response val = cache_.set_val(key, type, value);
 
-        if (success) {
+        if (val.success) {
           std::cout << "true " << value << std::endl;
         } else {
-          std::cout << "false" << std::endl;
+          std::cout << "false " << val.error << std::endl;
         }
         break;
       }
@@ -62,19 +62,19 @@ void CLI::run() {
         std::cin >> type >> key;
         std::cin.ignore();
         std::getline(std::cin, value);
-        bool success = cache_.add_val(key, type, value);
+        MCache::Response val = cache_.set_val(key, type, value);
 
-        if (success) {
+        if (val.success) {
           std::cout << "true " << value << std::endl;
         } else {
-          std::cout << "false" << std::endl;
+          std::cout << "false " << val.error << std::endl;
         }
         break;
       }
 
       case Command::DEL: {
         std::cin >> key;
-        if (cache_.del_val(key)) {
+        if (cache_.del_key(key)) {
           std::cout << "true" << std::endl;
         } else {
           std::cout << "false" << std::endl;
@@ -85,12 +85,28 @@ void CLI::run() {
 
       case Command::GET: {
         std::cin >> key;
-        auto val = cache_.get_val(key);
+        MCache::Response val = cache_.get_val(key);
 
-        if (val.has_value()) {
-          std::cout << "true {" << val->first << "} " << val->second << std::endl;
+        if (val.success) {
+          std::cout << "true {" << val.type << "} ";
+
+          if (val.data) {
+            std::visit([](auto& v) {
+              using T = std::decay_t<decltype(v)>;
+              if constexpr (std::is_same_v<T, int>) {
+                std::cout << v;
+              } else if constexpr (std::is_same_v<T, float>) {
+                std::cout << v;
+              } else if constexpr (std::is_same_v<T, std::string>) {
+                std::cout << v;
+              } 
+              std::cout << std::endl;
+            }, *val.data);
+          } else {
+            std::cout << "Error: No data available in response." << std::endl;
+          }
         } else {
-          std::cout << "false" << std::endl;
+          std::cout << "false " << val.error << std::endl;
         }
         break;
       }
@@ -109,12 +125,12 @@ void CLI::run() {
         std::cin.ignore();
         std::getline(std::cin, value);
 
-        bool success = cache_.push_list(key, type, value);
+        MCache::Response val = cache_.push_list(key, type, value);
 
-        if (success) {
+        if (val.success) {
           std::cout << "true" << std::endl;
         } else {
-          std::cout << "false" << std::endl;
+          std::cout << "false " << val.error << std::endl;
         }
         break;
       }

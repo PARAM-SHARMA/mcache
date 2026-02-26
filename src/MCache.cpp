@@ -1,18 +1,18 @@
 #include "MCache.h"
 #include "serialization.h"
 
-std::optional<std::pair<std::string, std::string>> MCache::get_val(const std::string& key) {
+MCache::Response MCache::get_val(const std::string& key) {
   std::lock_guard<std::mutex> lock(mtx_);
 
   auto it = store_.find(key);
   if (it == store_.end()) {
     ++misses_;
-    return std::nullopt;
+    return Response{false, "", "", std::nullopt, "Key not found"};
   }
 
   ++hits_;
   const CacheValue& cv = it->second;
-  std::pair<std::string, std::string> result;
+  MCache::Response result = Response{true, "", "", std::nullopt, ""};
 
   // First dispatch by structure type
   switch (cv.s_type) {
@@ -23,20 +23,20 @@ std::optional<std::pair<std::string, std::string>> MCache::get_val(const std::st
           switch (cv.type) {
             case ValueType::INT: {
               int v = serialization::from_bytes<int>(raw_bytes);
-              result.first = "int";
-              result.second = std::to_string(v);
+              result.type = "int";
+              result.data = v;
               break;
             }
             case ValueType::FLOAT: {
               float v = serialization::from_bytes<float>(raw_bytes);
-              result.first = "float";
-              result.second = std::to_string(v);
+              result.type = "float";
+              result.data = v;
               break;
             }
             case ValueType::STRING: {
               std::string v = serialization::from_bytes_string(raw_bytes);
-              result.first = "string";
-              result.second = v;
+              result.type = "string";
+              result.data = v;
               break;
             }
           }
@@ -49,8 +49,8 @@ std::optional<std::pair<std::string, std::string>> MCache::get_val(const std::st
       std::visit([&](auto& list){
         using T = std::decay_t<decltype(list)>;
         if constexpr (std::is_same_v<T, ByteList>) {
-          result.first = "list";
-          result.second = "size=" + std::to_string(list.size());
+          result.type = "list";
+          result.data = "size=" + std::to_string(list.size());
         }
       }, cv.data);
       break;
@@ -60,8 +60,8 @@ std::optional<std::pair<std::string, std::string>> MCache::get_val(const std::st
       std::visit([&](auto& s){
         using T = std::decay_t<decltype(s)>;
         if constexpr (std::is_same_v<T, ByteSet>) {
-          result.first = "set";
-          result.second = "size=" + std::to_string(s.size());
+          result.type = "set";
+          result.data = "size=" + std::to_string(s.size());
         }
       }, cv.data);
       break;
@@ -71,8 +71,8 @@ std::optional<std::pair<std::string, std::string>> MCache::get_val(const std::st
       std::visit([&](auto& m){
         using T = std::decay_t<decltype(m)>;
         if constexpr (std::is_same_v<T, ByteMap>) {
-          result.first = "map";
-          result.second = "size=" + std::to_string(m.size());
+          result.type = "map";
+          result.data = "size=" + std::to_string(m.size());
         }
       }, cv.data);
       break;
@@ -82,35 +82,35 @@ std::optional<std::pair<std::string, std::string>> MCache::get_val(const std::st
   return result;
 }
 
-bool MCache::add_val(const std::string& key, const std::string& type, const std::string& value) {
+MCache::Response MCache::add_val(const std::string& key, const std::string& type, const std::string& value) {
   std::lock_guard<std::mutex> lock(mtx_);
   if (store_.find(key) != store_.end())
-    return false;
+    return Response{false, "", "", std::nullopt, "Key already exists"};
 
   if (auto parsed = parse_value(type, value)) {
     store_.emplace(key, *parsed);
-    return true;
+    return Response{true, "raw", type, std::nullopt, ""};
   }
 
-  return false;
+  return Response{false, "", "", std::nullopt, "Unexpected Type"};
 }
 
-bool MCache::set_val(const std::string& key, const std::string& type, const std::string& value) {
+MCache::Response MCache::set_val(const std::string& key, const std::string& type, const std::string& value) {
   std::lock_guard<std::mutex> lock(mtx_);
   auto it = store_.find(key);
   if (it == store_.end()) {
-    return false;
+    return Response{false, "", "", std::nullopt, "Key not found"};
   }
 
   if (auto parsed = parse_value(type, value)) {
     it->second = *parsed;
-    return true;
+    return Response{true, "raw", type, std::nullopt, ""};
   } else {
-    return false;
+    return Response{false, "", "", std::nullopt, "Unexpected Type"};
   }
 }
 
-bool MCache::del_val(const std::string& key) noexcept {
+bool MCache::del_key(const std::string& key) noexcept {
   std::lock_guard<std::mutex> lock(mtx_);
   return store_.erase(key) > 0;
 }

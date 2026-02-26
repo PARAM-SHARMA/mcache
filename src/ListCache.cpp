@@ -50,10 +50,9 @@ MCache::Response MCache::get_list(const std::string& key) {
   return Response{false, "", "", std::nullopt, "Not a LIST type"};
 }
 
-bool MCache::push_list(const std::string& key, const std::string& type, const std::string& values) {
+MCache::Response MCache::push_list(const std::string& key, const std::string& type, const std::string& values) {
   std::lock_guard<std::mutex> lock(mtx_);
   MCache::ByteList bl;
-
 
   serialization::construct_list(type, bl, values);
 
@@ -62,7 +61,7 @@ bool MCache::push_list(const std::string& key, const std::string& type, const st
     if (auto* existing_list = std::get_if<ByteList>(&it->second.data)) {
       existing_list->insert(existing_list->end(), bl.begin(), bl.end());
     } else {
-      return false;
+      return Response{false, "", "", std::nullopt, "Unexpected type"};
     }
 
   } else {
@@ -81,5 +80,5 @@ bool MCache::push_list(const std::string& key, const std::string& type, const st
     store_[key] = std::move(cv);
   }
 
-  return true;
+  return Response{true, "list", type, std::nullopt, ""};
 }
