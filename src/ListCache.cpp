@@ -6,6 +6,7 @@ MCache::Response MCache::get_list(const std::string& key) {
   auto it = store_.find(key);
 
   if (it == store_.end()) {
+    ++misses_;
     return Response{false, "", "", std::nullopt, "Key not found"};
   }
 
