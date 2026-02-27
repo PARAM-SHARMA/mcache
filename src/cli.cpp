@@ -1,5 +1,7 @@
 #include "cli.h"
+#include "MCache.h"
 #include <iostream>
+#include <variant>
 
 void CLI::run() {
   enum class Command {
@@ -8,6 +10,8 @@ void CLI::run() {
     ADD,
     DEL,
     STAT,
+    PLIST,
+    GLIST,
     EXIT,
     UNKNOWN
   };
@@ -18,7 +22,15 @@ void CLI::run() {
     {"add", Command::ADD},
     {"del", Command::DEL},
     {"stat", Command::STAT},
+    {"plist", Command::PLIST},
+    {"glist", Command::GLIST},
     {"exit", Command::EXIT},
+  };
+
+  static const std::unordered_map<std::string, MCache::ValueType> types = {
+    {"int", MCache::ValueType::INT},
+    {"float", MCache::ValueType::FLOAT},
+    {"string", MCache::ValueType::STRING}
   };
 
   std::string cmd, key;
@@ -43,12 +55,20 @@ void CLI::run() {
         std::cin >> type >> key;
         std::cin.ignore();
         std::getline(std::cin, value);
-        bool success = cache_.set_val(key, type, value);
+        MCache::ValueType value_type;
+        auto type_it = types.find(type);
+        if (type_it != types.end()) {
+          value_type = type_it->second;
+        } else {
+          std::cout << "false Invalid Type" << std::endl;
+          break;
+        }
+        MCache::Response val = cache_.set_val(key, value_type, value);
 
-        if (success) {
+        if (val.success) {
           std::cout << "true " << value << std::endl;
         } else {
-          std::cout << "false" << std::endl;
+          std::cout << "false " << val.error << std::endl;
         }
         break;
       }
@@ -57,19 +77,29 @@ void CLI::run() {
         std::cin >> type >> key;
         std::cin.ignore();
         std::getline(std::cin, value);
-        bool success = cache_.add_val(key, type, value);
 
-        if (success) {
+        MCache::ValueType value_type;
+        auto type_it = types.find(type);
+        if (type_it != types.end()) {
+          value_type = type_it->second;
+        } else {
+          std::cout << "false Invalid Type" << std::endl;
+          break;
+        }
+
+        MCache::Response val = cache_.add_val(key, value_type, value);
+
+        if (val.success) {
           std::cout << "true " << value << std::endl;
         } else {
-          std::cout << "false" << std::endl;
+          std::cout << "false " << val.error << std::endl;
         }
         break;
       }
 
       case Command::DEL: {
         std::cin >> key;
-        if (cache_.del_val(key)) {
+        if (cache_.del_key(key)) {
           std::cout << "true" << std::endl;
         } else {
           std::cout << "false" << std::endl;
@@ -80,12 +110,28 @@ void CLI::run() {
 
       case Command::GET: {
         std::cin >> key;
-        auto val = cache_.get_val(key);
+        MCache::Response val = cache_.get_val(key);
 
-        if (val.has_value()) {
-          std::cout << "true {" << val->first << "} " << val->second << std::endl;
+        if (val.success) {
+          std::cout << "true {" << val.type << "} ";
+
+          if (val.data) {
+            std::visit([](auto& v) {
+              using T = std::decay_t<decltype(v)>;
+              if constexpr (std::is_same_v<T, int>) {
+                std::cout << v;
+              } else if constexpr (std::is_same_v<T, float>) {
+                std::cout << v;
+              } else if constexpr (std::is_same_v<T, std::string>) {
+                std::cout << v;
+              } 
+              std::cout << std::endl;
+            }, *val.data);
+          } else {
+            std::cout << "Error: No data available in response." << std::endl;
+          }
         } else {
-          std::cout << "false" << std::endl;
+          std::cout << "false " << val.error << std::endl;
         }
         break;
       }
@@ -96,6 +142,67 @@ void CLI::run() {
         std::cout << "hits -> " << stat.hits << std::endl;
         std::cout << "misses -> " << stat.misses << std::endl;
         std::cout << "keys -> " << stat.keys << std::endl;
+        break;
+      }
+
+      case Command::PLIST: {
+        std::cin >> type >> key;
+        std::cin.ignore();
+        std::getline(std::cin, value);
+
+        MCache::ValueType value_type;
+        auto type_it = types.find(type);
+        if (type_it != types.end()) {
+          value_type = type_it->second;
+        } else {
+          std::cout << "false Invalid Type" << std::endl;
+          break;
+        }
+
+        MCache::Response val = cache_.push_list(key, value_type, value);
+
+        if (val.success) {
+          std::cout << "true" << std::endl;
+        } else {
+          std::cout << "false " << val.error << std::endl;
+        }
+        break;
+      }
+
+      case Command::GLIST: {
+        std::cin >> key;
+        MCache::Response val = cache_.get_list(key);
+
+        if (val.success) {
+          std::cout << "true {" << val.type << "} ";
+
+          if (val.data) {
+            std::visit([](auto& container) {
+              using T = std::decay_t<decltype(container)>;
+              if constexpr (std::is_same_v<T, std::vector<int>>) {
+                std::cout << "List of ints: ";
+                for (const auto& item : container) {
+                  std::cout << item << " ";
+                }
+              } else if constexpr (std::is_same_v<T, std::vector<float>>) {
+                std::cout << "List of floats: ";
+                for (const auto& item : container) {
+                  std::cout << item << " ";
+                }
+              } else if constexpr (std::is_same_v<T, std::vector<std::string>>) {
+                std::cout << "List of strings: ";
+                for (const auto& item : container) {
+                  std::cout << item << " ";
+                }
+              }
+              std::cout << std::endl;
+            }, *val.data);
+          } else {
+            std::cout << "Error: No data available in response." << std::endl;
+          }
+        } else {
+          std::cout << "false " << val.error << std::endl;
+        }
         break;
       }
 

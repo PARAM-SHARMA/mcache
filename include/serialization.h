@@ -1,9 +1,11 @@
 #pragma once
 
+#include "MCache.h"
 #include <vector>
 #include <cstdint>
 #include <string>
 #include <cstring>
+#include <sstream>
 #include <type_traits>
 
 namespace serialization {
@@ -28,12 +30,50 @@ T from_bytes(const std::vector<uint8_t>& data) {
   return obj;
 }
 
+inline std::vector<std::string> split(std::string str, char divider) {
+  std::stringstream ss(str);
+  std::string item;
+  std::vector<std::string> result;
+
+  while (std::getline(ss, item, divider)) {
+    result.push_back(item);
+  }
+
+  return result;
+}
+
 inline std::vector<uint8_t> to_bytes(const std::string& str) {
   return std::vector<uint8_t>(str.begin(), str.end());
 }
 
 inline std::string from_bytes_string(const std::vector<uint8_t>& data) {
   return std::string(data.begin(), data.end());
+}
+
+inline void construct_list(const MCache::ValueType type, std::vector<std::vector<uint8_t>>& bl,const std::string& values) {
+
+  std::vector<std::string> vals = split(values, ' ');
+
+  for (const std::string s : vals) {
+
+    std::vector<uint8_t> b;
+    try {
+      if (type == MCache::ValueType::INT) {
+        b = to_bytes(std::stoi(s));
+      } else if (type == MCache::ValueType::FLOAT) {
+        b = to_bytes(std::stof(s));
+      } else if (type == MCache::ValueType::STRING) {
+        b = to_bytes(s);
+      }
+      bl.push_back(b);
+    } catch (const std::invalid_argument&) {
+      continue;
+    } catch (const std::out_of_range&) {
+      continue;
+    }
+  }
+
+  return;
 }
 
 }

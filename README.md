@@ -61,7 +61,7 @@ MCacheProject/
 ### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/PARAM-SHARMA/mcache
 cd MCacheProject
 ```
 
@@ -114,6 +114,16 @@ MCache > add string greeting Hello world from MCache
 true Hello world from MCache
 ```
 
+### Add List
+
+```text
+MCache > plist int b 3 4 5 6
+true
+
+MCache > plist float prices 34.23 43.12 45.00
+true
+```
+
 ### Retrieve values
 
 ```text
@@ -122,6 +132,12 @@ true {int} 3
 
 MCache > get greeting
 true {string} Hello world from MCache
+
+MCache > get b
+true {list} size=4
+
+MCache > glist b
+true {int} List of ints: 3 4 5 6
 ```
 
 ### Update values
