@@ -138,6 +138,14 @@ true {list} size=4
 
 MCache > glist b
 true {int} List of ints: 3 4 5 6
+
+// fetches b[2]
+MCache > glist b 2
+true {int} List of ints: 5
+
+// fetches f[0, 2]
+MCache > glist b 0 2
+true {int} List of ints: 3 4 5
 ```
 
 ### Update values
