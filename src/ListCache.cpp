@@ -51,6 +51,67 @@ MCache::Response MCache::get_list(const std::string& key) {
   return Response{false, "", "", std::nullopt, "Not a LIST type"};
 }
 
+MCache::Response MCache::get_list(const std::string& key, const int index) {
+  return MCache::get_list(key, index, index);
+}
+
+MCache::Response MCache::get_list(const std::string& key, const int start_index, const int end_index) {
+  std::lock_guard<std::mutex> lock(mtx_);
+  auto it = store_.find(key);
+
+  if (it == store_.end()) {
+    ++misses_;
+    return Response{false, "", "", std::nullopt, "Key not found"};
+  }
+
+  ++hits_;
+  const CacheValue& cv = it->second;
+
+  if (cv.s_type == StructType::LIST) {
+    return std::visit([&](auto& container) -> Response {
+
+      if constexpr (std::is_same_v<std::decay_t<decltype(container)>, ByteList>) {
+        if (cv.type == ValueType::INT) {
+          std::vector<int> deserialized_list;
+          for (const auto& raw_bytes : container) {
+            int value = serialization::from_bytes<int>(raw_bytes);
+            deserialized_list.push_back(value);
+          }
+          if (start_index < 0 || end_index >= container.size() || start_index > end_index)
+            return Response{false, "", "", std::nullopt, "Invalid range"};
+          return Response{true, "list", "int", std::vector<int>(deserialized_list.begin() + start_index, deserialized_list.begin() + end_index + 1), ""};
+        }
+        else if (cv.type == ValueType::FLOAT) {
+          std::vector<float> deserialized_list;
+          for (const auto& raw_bytes : container) {
+            float value = serialization::from_bytes<float>(raw_bytes);
+            deserialized_list.push_back(value);
+          }
+          if (start_index < 0 || end_index >= container.size() || start_index > end_index)
+            return Response{false, "", "", std::nullopt, "Invalid range"};
+          return Response{true, "list", "float", std::vector<float>(deserialized_list.begin() + start_index, deserialized_list.begin() + end_index + 1), ""};
+        }
+        else if (cv.type == ValueType::STRING) {
+          std::vector<std::string> deserialized_list;
+          for (const auto& raw_bytes : container) {
+            std::string value = serialization::from_bytes_string(raw_bytes);
+            deserialized_list.push_back(value);
+          }
+          if (start_index < 0 || end_index >= container.size() || start_index > end_index)
+            return Response{false, "", "", std::nullopt, "Invalid range"};
+          return Response{true, "list", "string", std::vector<std::string>(deserialized_list.begin() + start_index, deserialized_list.begin() + end_index + 1), ""};
+        }
+        else {
+          return Response{false, "", "", std::nullopt, "Unsupported type in list"};
+        }
+      }
+      return Response{false, "", "", std::nullopt, "Unexpected type"};
+    }, cv.data);
+  }
+
+  return Response{false, "", "", std::nullopt, "Not a LIST type"};
+}
+
 MCache::Response MCache::push_list(const std::string& key, const MCache::ValueType type, const std::string& values) {
   std::lock_guard<std::mutex> lock(mtx_);
   MCache::ByteList bl;

@@ -68,6 +68,8 @@ public:
 
   // byte list
   Response get_list(const std::string& key);
+  Response get_list(const std::string& key, const int index);
+  Response get_list(const std::string& key, const int start_index, const int end_index);
   Response push_list(const std::string& key, const ValueType type, const std::string& value);
 
   struct Stats {
