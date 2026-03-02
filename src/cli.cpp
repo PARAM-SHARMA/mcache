@@ -218,13 +218,29 @@ void CLI::handle_plist(const std::vector<std::string>& args) {
 
 void CLI::handle_glist(const std::vector<std::string>& args) {
   if (args.size() < 2) {
-    std::cout << "Usage: glist <key>\n";
+    std::cout << "Usage: glist <key> [startIndex] [endIndex]\n";
     return;
   }
 
-  const std::string& key = args[1];
+  MCache::Response val;
 
-  MCache::Response val = cache_.get_list(key);
+  if (args.size() == 2) {
+    const std::string& key = args[1];
+    val = cache_.get_list(key);
+  }
+
+  if (args.size() == 3) {
+    const std::string& key = args[1];
+    const int startIndex = std::stoi(args[2]);
+    val = cache_.get_list(key, startIndex);
+  }
+
+  if (args.size() == 4) {
+    const std::string& key = args[1];
+    const int startIndex = std::stoi(args[2]);
+    const int endIndex = std::stoi(args[3]);
+    val = cache_.get_list(key, startIndex, endIndex);
+  }
 
   if (val.success) {
     std::cout << "true {" << val.type << "} ";
