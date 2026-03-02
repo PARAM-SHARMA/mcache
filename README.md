@@ -38,12 +38,15 @@ MCacheProject/
 ├─ CMakeLists.txt       # CMake build configuration
 ├─ include/             # Header files
 │  ├─ MCache.h
+│  ├─ serialization.h
 │  └─ cli.h
 ├─ src/                 # Source files
 │  ├─ MCache.cpp
 │  ├─ cli.cpp
+│  ├─ ListCache.cpp
 │  └─ main.cpp
 └─ tests/               # Test files
+   ├─ list_test.cpp              
    └─ test_cache.cpp
 ```
 
@@ -91,7 +94,7 @@ cmake --build .
 MCacheApp.exe     # Windows
 ```
 
-6. Run the tests:
+### 6. Run the tests:
 
 ```bash
 ctest
